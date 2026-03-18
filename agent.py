@@ -62,6 +62,8 @@ After receiving a tool result, carefully verify it against the policy:
 - Follow troubleshooting workflows step by step. Check each condition before moving to the next.
 - Run ALL required diagnostics before concluding. Do not skip steps even if early results look normal.
 - When checking permissions, settings, or configurations: verify EVERY required item is present. If the policy requires items A, B, and C, confirm all three — not just two.
+- IMPORTANT: If there are multiple issues, fix ALL issues you CAN resolve first, then escalate only the remaining unresolvable issues. Do not escalate prematurely — complete all fixable steps before transferring.
+- After each fix, re-run diagnostics to verify the fix worked and check for remaining issues.
 """.strip()
 
 SYSTEM_TEMPLATE = """
@@ -133,7 +135,6 @@ class CustomAgent(LLMAgent):
 
     def __init__(self, tools: list[Tool], domain_policy: str, llm=None, llm_args=None):
         LocalAgent.__init__(self, tools=tools, domain_policy=domain_policy)
-        # Use gpt-4.1 for better policy adherence
         self.llm = "openai/gpt-4.1"
         self.llm_args = dict(llm_args or {})
 
