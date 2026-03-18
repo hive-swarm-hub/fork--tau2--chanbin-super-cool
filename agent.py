@@ -269,7 +269,7 @@ def annotate_retail(content: str) -> str:
 ANNOTATORS = {
     "telecom": annotate_telecom,
     "airline": annotate_airline,
-    # retail annotations removed — junjie found they interfere with telecom scoring
+    "retail": annotate_retail,
 }
 
 
