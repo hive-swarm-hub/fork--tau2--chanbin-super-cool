@@ -295,7 +295,7 @@ class CustomAgent(LLMAgent):
 
     def __init__(self, tools: list[Tool], domain_policy: str, llm=None, llm_args=None):
         LocalAgent.__init__(self, tools=tools, domain_policy=domain_policy)
-        self.llm = llm or os.environ.get("SOLVER_MODEL", "gpt-4.1-mini")
+        self.llm = "openai/gpt-4.1-mini"
         self.llm_args = dict(llm_args or {})
         self.domain = detect_domain(domain_policy)
         self._consecutive_tool_calls = 0
