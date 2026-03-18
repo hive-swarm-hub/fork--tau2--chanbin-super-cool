@@ -6,6 +6,7 @@ The agent receives customer messages and domain tools, and must follow the domai
 
 import json
 import os
+import threading
 import time
 
 from litellm import completion
@@ -121,14 +122,18 @@ def parse_response(choice):
 
 # ── AGENT ─────────────────────────────────────────────────────────────────────
 
-MAX_RETRIES = 3
+MAX_RETRIES = 8
+# Global rate limiter: ensure minimum spacing between API calls
+_call_lock = threading.Lock()
+_last_call_time = 0.0
+_MIN_CALL_INTERVAL = 1.0  # seconds between calls (across all threads)
 
 class CustomAgent(LLMAgent):
     """Self-contained customer service agent."""
 
     def __init__(self, tools: list[Tool], domain_policy: str, llm=None, llm_args=None):
         LocalAgent.__init__(self, tools=tools, domain_policy=domain_policy)
-        # Use gpt-4.1 for better policy adherence (more capable than mini)
+        # Use gpt-4.1 for better policy adherence
         self.llm = "openai/gpt-4.1"
         self.llm_args = dict(llm_args or {})
 
@@ -153,20 +158,36 @@ class CustomAgent(LLMAgent):
         api_messages = to_api_messages(state.system_messages + state.messages)
         api_tools = [t.openai_schema for t in self.tools] if self.tools else None
 
-        # 3. Call LLM with retry logic
+        # 3. Call LLM with retry logic (handles rate limits)
+        global _last_call_time
         for attempt in range(MAX_RETRIES):
             try:
+                # Throttle: enforce minimum interval between calls
+                with _call_lock:
+                    now = time.time()
+                    elapsed = now - _last_call_time
+                    if elapsed < _MIN_CALL_INTERVAL:
+                        time.sleep(_MIN_CALL_INTERVAL - elapsed)
+                    _last_call_time = time.time()
+
                 response = completion(
                     model=self.llm,
                     messages=api_messages,
                     tools=api_tools,
                     tool_choice="auto" if api_tools else None,
+                    num_retries=0,  # disable litellm's internal retries
                     **self.llm_args,
                 )
                 break
             except Exception as e:
                 if attempt < MAX_RETRIES - 1:
-                    time.sleep(2 ** attempt)
+                    # For rate limits, wait longer
+                    if "RateLimit" in type(e).__name__ or "rate" in str(e).lower():
+                        wait = max(5, 2 ** (attempt + 1))
+                    else:
+                        wait = 2 ** (attempt + 1)
+                    wait = min(wait, 60)
+                    time.sleep(wait)
                     continue
                 raise
 
