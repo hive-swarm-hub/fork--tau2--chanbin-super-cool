@@ -1,0 +1,2 @@
+commit	accuracy	cost_usd	status	description
+9b38e45	0.500000	0.00	discard	exp1: enhanced prompt with tool result verification - airline 0.40, retail 0.60, telecom 0.45
