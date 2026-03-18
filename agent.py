@@ -302,9 +302,13 @@ class CustomAgent(LLMAgent):
 
     def __init__(self, tools: list[Tool], domain_policy: str, llm=None, llm_args=None):
         LocalAgent.__init__(self, tools=tools, domain_policy=domain_policy)
-        self.llm = "openai/gpt-4.1"
-        self.llm_args = dict(llm_args or {})
+        # gpt-4.1 for airline/retail, gpt-4.1-mini for telecom (handles long workflows better)
         self.domain = detect_domain(domain_policy)
+        if self.domain == "telecom":
+            self.llm = "openai/gpt-4.1-mini"
+        else:
+            self.llm = "openai/gpt-4.1"
+        self.llm_args = dict(llm_args or {})
         self._consecutive_tool_calls = 0
 
     @property
