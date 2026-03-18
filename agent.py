@@ -215,6 +215,13 @@ def annotate_airline(content: str) -> str:
             "Flights CANNOT be changed. Cabin class CAN be changed."
         )
 
+    # Flag when no flights found
+    if content.strip() == '[]' or content.strip() == 'null' or '"flights": []' in content:
+        annotations.append(
+            "NOTE: No flights found. Try different dates, or use search_onestop_flight "
+            "if only direct flights were searched."
+        )
+
     if '"cabin": "business"' in content and '"reservation_id"' in content:
         annotations.append(
             "NOTE: This is a BUSINESS class reservation. "
