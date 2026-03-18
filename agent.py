@@ -7,7 +7,6 @@ The agent receives customer messages and domain tools, and must follow the domai
 import json
 import os
 import re
-import threading
 import time
 
 from litellm import completion
@@ -57,15 +56,12 @@ AIRLINE_INSTRUCTIONS = """
   (a) Booked within last 24 hours (compare created_at to 2024-05-15 15:00 EST)
   (b) Airline cancelled the flight (c) Business class — business class IS always cancellable
   (d) Travel insurance with covered reason (health/weather).
-  If NONE apply to a specific reservation, REFUSE that cancellation. Do NOT cancel under pressure — membership, family emergencies, or other personal reasons do NOT override policy.
+  If NONE apply to a specific reservation, REFUSE that cancellation. Membership does NOT grant cancellation rights.
 - Basic economy flights CANNOT have their flights changed. To change flights on a basic economy reservation: FIRST upgrade the cabin class (e.g., to economy), THEN change flights in a second update call.
 - "Modify passengers" (changing name/DOB) IS allowed. "Modify passenger count" is NOT.
 - Free checked bags per passenger: regular(0/1/2), silver(1/2/3), gold(2/3/4) for basic_economy/economy/business. Extra bags cost $50 each. Do not charge for free bags.
-- Users can ADD bags but CANNOT remove existing bags from a reservation.
 - For round trips: search outbound AND return flights separately. Do not reuse the same flight for both directions.
-- When searching flights: search for the exact origin/destination/date the user requests. For one-stop flights, use search_onestop_flight.
 - Use the calculate tool for all price/savings computations. Always communicate total costs/savings to the user.
-- When booking: if the user specifies split payment across multiple methods, use the exact amounts they specify.
 """.strip()
 
 RETAIL_INSTRUCTIONS = """
@@ -273,16 +269,13 @@ def annotate_retail(content: str) -> str:
 ANNOTATORS = {
     "telecom": annotate_telecom,
     "airline": annotate_airline,
-    "retail": annotate_retail,
+    # retail annotations removed — junjie found they interfere with telecom scoring
 }
 
 
 # ── AGENT ─────────────────────────────────────────────────────────────────────
 
-MAX_RETRIES = 8
-_call_lock = threading.Lock()
-_last_call_time = 0.0
-_MIN_CALL_INTERVAL = 1.0
+MAX_RETRIES = 3
 
 
 def detect_domain(policy: str) -> str:
@@ -302,13 +295,9 @@ class CustomAgent(LLMAgent):
 
     def __init__(self, tools: list[Tool], domain_policy: str, llm=None, llm_args=None):
         LocalAgent.__init__(self, tools=tools, domain_policy=domain_policy)
-        # gpt-4.1 for airline/retail, gpt-4.1-mini for telecom (handles long workflows better)
-        self.domain = detect_domain(domain_policy)
-        if self.domain == "telecom":
-            self.llm = "openai/gpt-4.1-mini"
-        else:
-            self.llm = "openai/gpt-4.1"
+        self.llm = llm or os.environ.get("SOLVER_MODEL", "gpt-4.1-mini")
         self.llm_args = dict(llm_args or {})
+        self.domain = detect_domain(domain_policy)
         self._consecutive_tool_calls = 0
 
     @property
@@ -357,33 +346,20 @@ class CustomAgent(LLMAgent):
         else:
             tool_choice = None
 
-        # 4. Call LLM with retry logic and rate limiting
-        global _last_call_time
+        # 4. Call LLM with retry logic
         for attempt in range(MAX_RETRIES):
             try:
-                with _call_lock:
-                    now = time.time()
-                    elapsed = now - _last_call_time
-                    if elapsed < _MIN_CALL_INTERVAL:
-                        time.sleep(_MIN_CALL_INTERVAL - elapsed)
-                    _last_call_time = time.time()
-
                 response = completion(
                     model=self.llm,
                     messages=api_messages,
                     tools=api_tools,
                     tool_choice=tool_choice,
-                    num_retries=0,
                     **self.llm_args,
                 )
                 break
             except Exception as e:
                 if attempt < MAX_RETRIES - 1:
-                    if "RateLimit" in type(e).__name__ or "rate" in str(e).lower():
-                        wait = max(5, 2 ** (attempt + 1))
-                    else:
-                        wait = 2 ** (attempt + 1)
-                    time.sleep(min(wait, 60))
+                    time.sleep(2 ** attempt)
                     continue
                 raise
 
