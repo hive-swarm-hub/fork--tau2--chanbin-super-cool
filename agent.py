@@ -77,7 +77,6 @@ RETAIL_INSTRUCTIONS = """
 TELECOM_INSTRUCTIONS = """
 - Follow the troubleshooting workflow step by step. You CAN guide users through ALL device actions: toggling airplane mode, mobile data, data roaming, Wi-Fi calling, data saver, VPN, changing network mode preference, SIM reseating, APN reset, granting app permissions, rebooting. These are ALL within scope.
 - Transfer to human ONLY for: locked SIM (PIN/PUK) or after exhausting ALL workflow steps. When transferring, you MUST call transfer_to_human_agents tool — do not just tell the user verbally.
-- IMPORTANT: If there are multiple issues, fix ALL issues you CAN resolve first, then escalate only the remaining unresolvable issues. Do not escalate prematurely.
 - Line selection: the customer may have multiple lines. Match the line's phone_number to the user's phone number. Always use that specific line for all lookups and actions.
 - Roaming: if the user is abroad or traveling, fix BOTH: (1) backend — call enable_roaming if roaming_enabled is false; (2) device — ask user to check_network_status and toggle_roaming ON if data roaming is disabled. Both are needed.
 - Data usage: check on the CORRECT line. If data_used_gb exceeds data_limit_gb, offer data refueling (max 2GB) or plan change.
