@@ -4,3 +4,4 @@ run.log
 results.tsv
 __pycache__/
 *.pyc
+excalidraw.log
