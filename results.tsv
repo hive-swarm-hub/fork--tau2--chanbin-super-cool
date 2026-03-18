@@ -1,5 +1,5 @@
 commit	accuracy	cost_usd	status	description
 96ebaa5	0.420000	0.00	keep	baseline: unmodified agent - airline 0.25, retail 0.50, telecom 0.425
-9b38e45	0.500000	0.00	keep	exp1: enhanced prompt (gpt-5.4-mini) - airline 0.40, retail 0.60, telecom 0.45
 3ccfc09	0.560000	0.00	keep	exp6b: gpt-4.1 + rate limiting - airline 0.60, retail 0.80, telecom 0.30
 0b23166	0.550000	0.00	keep	exp7: fix fixable issues first - airline 0.50, retail 0.70, telecom 0.425
+1577878	0.580000	0.00	keep	exp8: action-oriented + complete ALL changes - airline 0.45, retail 0.85, telecom 0.375
