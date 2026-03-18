@@ -1,6 +1,7 @@
 commit	accuracy	cost_usd	status	description
 96ebaa5	0.420000	0.00	keep	baseline: unmodified agent
 52a66d2	0.650000	0.00	keep	exp9: junjie+gpt-4.1 - A0.70/R0.75/T0.525
-a7c32a6	0.650000	0.00	keep	exp10: hybrid 4.1+mini - A0.50/R0.775/T0.60
-a7c32a6	0.750000	0.00	keep	exp10-r2: hybrid rerun - A0.65/R0.825/T0.725
-db88f41	0.710000	0.00	keep	exp12: loop limit 3→10 - A0.55/R0.80/T0.70
+a7c32a6	0.750000	0.00	keep	exp10-r2: hybrid rerun BEST - A0.65/R0.825/T0.725
+db88f41	0.710000	0.00	keep	exp12: loop limit 10 - A0.55/R0.80/T0.70
+e240705	0.680000	0.00	keep	exp12-r2: loop 10 rerun - A0.60/R0.725/T0.675
+e240705	0.740000	0.00	keep	exp12-r3: loop 10 rerun2 - A0.80/R0.75/T0.70
